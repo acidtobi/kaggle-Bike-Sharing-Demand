@@ -1,6 +1,8 @@
 require(ggplot2)
 require(zoo)
 
+# http://stackoverflow.com/questions/4964255/interpolate-missing-values-in-a-time-series-with-a-seasonal-cycle
+
 train <- read.csv("/home/tobi/_Projects/[kaggle] Bike Sharing Demand/train.csv",sep=",",header=TRUE)
 train$datetime <- strptime(train$datetime, "%Y-%m-%d %H:%M:%S")
 train$day <- as.factor(as.character(strptime(train$datetime, "%Y-%m-%d")))
@@ -9,7 +11,9 @@ train$hour <- as.numeric(strftime(train$datetime, "%H"))
 
 all_days = data.frame(day = as.factor(seq(as.Date(train$datetime[1]), as.Date(train$datetime[nrow(train)]), by="day")))
 m <- merge(all_days, avg_rentals_per_day, by="day", all.x=T)
-m$count <- na.approx(m$count)
+m$count_approx <- na.spline(m$count)
+t <- m$count_approx
+plot(stl(ts(t,frequency=7),s.window="periodic",t.window = 3*19, t.jump=1, s.jump=1, na.action=na.exclude))
 
 rentals_per_weekday <- aggregate(count~weekday, train, mean)
 
